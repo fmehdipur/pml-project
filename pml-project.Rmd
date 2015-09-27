@@ -1,0 +1,120 @@
+#Title: Practical Machine Learning Project
+
+Author: Farhad.M   
+Date: Sep. 26, 2015
+
+
+###Summary
+Nowadays it is possible to collect a large amount of data about personal activity relatively inexpensively using available devices. One thing that people regularly do is quantify how much of a particular activity they do, but they rarely quantify how well they do it. In this project, our goal is to use data from accelerometers on the belt, forearm, arm, and dumbell of 6 participants who were asked to perform barbell lifts correctly and incorrectly in 5 different ways. The analysis satrts with loading and preprocessing data and continues ny model construction and validation. Finally the result of prediction on the provided test data is reported. 
+
+
+### Loading and Briefly Looking at the Trainign Dataset
+
+The training data has 19622 observations and 160 features.
+
+```{r}
+data_train <- read.csv('./train.csv')
+data_test<- read.csv('./test.csv')
+dim(data_train)
+table(data_train$classe)
+```
+
+###Preprocessing
+
+The size of the training dataset is rather large. Since some columns include a large number of missing values, we first find those columns with more than 80% NAs and remove them.
+
+*Counting the number of missing values and finding those with more than 80% NAs*
+
+```{r}
+NA_no<- numeric(0)
+NA_no <- sapply(data_train, function(x) sum(is.na(x)))
+idx <- c()
+for (i in 1:length(NA_no)) {
+   if (NA_no[[i]]/dim(data_train)[1] >= 0.80)
+     {idx <- append(idx,i)}
+}
+
+training <- data_train[,-idx]
+dim(training)
+```
+
+So, the number of features reduces from 160 to 93. 
+
+
+###Model Construction and Training
+
+As some vaiables have low variablity we use nearZeroVar function from Caret package to find features of the dataset that have near zero variance. Then we remove these predictors from the training dataset.
+
+
+```{r}
+library(caret)
+set.seed(12345)
+n0v <- nearZeroVar(training, saveMetrics = T)
+training <- training[,n0v$nzv == FALSE]
+dim(training)
+```
+
+It can be seen that the number of features is reduced again. 
+Looking at the feature names, the first five features are not usueful for the training purpose. So, we simply remove them as well. 
+
+```{r}
+names(training)
+training <- training[,-c(1,2,3,4,5)]
+dim(training)
+```
+
+So, the final number of predictures to be used within training is 54.
+
+Now, the data is divided into two sets for tarining and validation with the fraction of 70% and 30%, respectively:
+
+```{r}
+tset <- createDataPartition(training$classe, p = 0.7, list = FALSE)
+Trn <- training[tset, ]
+Val <- training[-tset, ]
+```
+
+We use **random forest** as one of popular models for training.
+
+```{r}
+library(randomForest)
+model <- randomForest(classe ~ ., data = Trn, verbose=F)
+```
+
+###Model Validation
+
+We test our model on the training set itself and the cross validation set.
+
+**The Training set accuracy**
+
+```{r}
+ptrn <- predict(model, Trn)
+confusionMatrix(ptrn, Trn$classe)
+```
+
+It can be seen that the proposed random Forest model is remarkably accurate.
+
+
+###Prediction on the given test data
+
+Here we use the above model to predict the way the exercise is done for the given sample test dataset.
+
+```{r}
+pt<- predict(model, data_test)
+print(pt)
+```
+
+
+Finally, the result file set is generated using the below code: 
+
+```{r}
+answers <- as.vector(pt)
+pml_write_files = function(x) {
+    n = length(x)
+    for (i in 1:n) {
+        filename = paste0("problem_id_", i, ".txt")
+        write.table(x[i], file = filename, quote = FALSE, row.names = FALSE, 
+            col.names = FALSE)
+    }
+}
+pml_write_files(answers)
+```
