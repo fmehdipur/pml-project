@@ -1,7 +1,9 @@
 #Title: Practical Machine Learning Project
 
-Author: Farhad.M   
+Author: Farhad. M   
 Date: Sep. 26, 2015
+
+
 
 
 ###Summary
