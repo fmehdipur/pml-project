@@ -19,6 +19,8 @@ data_train <- read.csv('./train.csv')
 data_test<- read.csv('./test.csv')
 dim(data_train)
 table(data_train$classe)
+head(data_train)
+summary(data_train)
 ```
 
 ###Preprocessing
